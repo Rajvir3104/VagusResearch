@@ -1,4 +1,5 @@
 from analysis import data_loading
+# import data_loading
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -9,7 +10,8 @@ def epochs_ecg():
     epochs = []
     timestamps = data_loading.detecting_rpeaks_ecg(fs, df)
     for i in timestamps:
-        epochs.append([i, (i-0.3), (i+0.3)])
+        epochs.append([i, (i-1), (i+1)])
+    print(len(epochs))
     return epochs
 
 def epochs_breath():
@@ -17,6 +19,7 @@ def epochs_breath():
     timestamps = data_loading.detecting_rpeaks_breathing(fs, df)
     for i in timestamps:
         epochs.append([i, (i-3), (i+3)])
+    print(len(epochs))
     return epochs
 
 def obtain_spikes():
@@ -26,7 +29,7 @@ def obtain_spikes():
     return spike_times
 
 
-# ... keep the rest of your PSTH code exactly the same ...
+
 
 
 def combining_spike_and_epoch(spike_t, epochs):
@@ -70,6 +73,56 @@ def psth_from_overlap(overlap, epochs, bin_width=0.01):
     bin_centers = (bins[:-1] + bins[1:]) / 2
     return bin_centers, mean_rate, sem_rate
 
+def plot_breath(df):
+    plt.figure(figsize=(14,5))
+    plt.plot(df["time"], df["breath"])
+    plt.title("Full Breathing timeline (debug)")
+    plt.xlabel("Time (s)")
+    plt.show()
+
+
+
+    # -------- BREATH GRAPH --------
+    plt.figure(figsize=(14,5))
+
+    # plot breathing signal if column exists
+    if "breath" in df.columns:
+        plt.plot(time, df["breath"], label="Breathing signal", alpha=0.8)
+
+    # mark peaks
+    plt.scatter(breath_peaks, [0]*len(breath_peaks),
+                marker="|", s=300, label="Detected breath peaks")
+
+    plt.title("Full Breathing timeline (debug)")
+    plt.xlabel("Time (s)")
+    plt.legend()
+    plt.show()
+
+
+
+if __name__ == "__main__":
+    spikes = obtain_spikes()
+    print("Spikes:", spikes)
+
+    e_ecg = epochs_ecg()
+    print("ECG Epochs:", e_ecg)
+
+    e_breath = epochs_breath()
+    print("Breath Epochs:", e_breath)
+
+    ov_ecg = combining_spike_and_epoch(spikes, e_ecg)
+    print("ECG Overlap:", ov_ecg)
+
+    ov_breath = combining_spike_and_epoch(spikes, e_breath)
+    print("Breath Overlap:", ov_breath)
+
+    t_ecg, mean_ecg, sem_ecg = psth_from_overlap(ov_ecg, e_ecg, bin_width=0.005)
+    print("ECG PSTH:", t_ecg, mean_ecg, sem_ecg)
+
+    t_breath, mean_breath, sem_breath = psth_from_overlap(ov_breath, e_breath, bin_width=0.1)
+    print("Breath PSTH:", t_breath, mean_breath, sem_breath)
+
+    plot_breath(df)
 # import numpy as np
 # import matplotlib.pyplot as plt
 # from analysis import data_loading

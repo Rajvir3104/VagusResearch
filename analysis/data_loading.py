@@ -1,16 +1,17 @@
 import numpy as np
 import pandas as pd
 from scipy.signal import butter, filtfilt, find_peaks
+import matplotlib.pyplot as plt
 
-fname = "../../playing_around/Vagus_nerve_test_Oct_9_HE.txt"
+fname = "../../playing_around/DM 2 labchart SG baseline.txt"
 
 # ---------- Loaders ----------
-def load_data_old_4col():  # your old format
+def load_data_old_4col(): 
     df = pd.read_csv(fname, sep=r"\s+", header=None)
     df.columns = ["time", "breath", "ecg", "vagus"]
     return df
 
-def load_data_msna_5col():  # header + 5 numeric cols
+def load_data_msna_5col():  
     rows = []
     with open(fname, "r") as f:
         for line in f:
@@ -24,7 +25,7 @@ def load_data_msna_5col():  # header + 5 numeric cols
     df = pd.DataFrame(rows, columns=["time", "ecg", "bp", "resp", "raw_arm"]).astype(float)
     return df
 
-# ---------- Canonicalize ----------
+
 def canonicalize(df: pd.DataFrame) -> pd.DataFrame:
     """
     Returns a NEW df with consistent column names:
@@ -35,7 +36,7 @@ def canonicalize(df: pd.DataFrame) -> pd.DataFrame:
     """
     cols = set(df.columns)
 
-    # old format
+    # vagus format
     if {"time", "breath", "ecg", "vagus"}.issubset(cols):
         out = df.rename(columns={"breath": "resp", "vagus": "nerve"}).copy()
         return out
@@ -61,7 +62,7 @@ def load_any():
         df = canonicalize(df)
         return df
 
-# ---------- Common signal utils ----------
+
 def calculate_freq(df):
     dt = np.diff(df["time"].values)
     dt_med = np.median(dt)
@@ -77,12 +78,12 @@ def lowpass(x, fs, cutoff=40, order=3):
     b, a = butter(order, cutoff / nyq, btype="low")
     return filtfilt(b, a, x)
 
-# ---------- Nerve preprocessing (works for BOTH) ----------
+#  Nerve preprocessing 
 def pre_process(df, fs, low_cut=300.0, high_cut=3000.0):
     nerve_raw = df["nerve"].to_numpy(float)
     return bandpass(nerve_raw, fs, low_cut, high_cut, order=2)
 
-def compute_threshold(signal, k=3.25):
+def compute_threshold(signal, k=4):
     sigma_n = np.median(np.abs(signal)) / 0.6745
     return k * sigma_n
 
@@ -132,4 +133,40 @@ def detecting_rpeaks_breathing(fs, df):
                            prominence=np.std(resp)*0.3)
     return t[pk_idx]
 
+def plot_breath(df, fs):
 
+    t = df["time"].to_numpy(float)
+    resp = df["resp"].to_numpy(float)
+
+    # detect peaks
+    peak_times = detecting_rpeaks_breathing(fs, df)
+
+    plt.figure(figsize=(14,5))
+
+    # plot breathing waveform
+    plt.plot(t, resp, label="Respiration")
+
+    # mark peaks (convert times → nearest indices)
+    peak_idx = np.searchsorted(t, peak_times)
+    peak_idx = peak_idx[peak_idx < len(resp)]
+
+    plt.scatter(t[peak_idx], resp[peak_idx],
+                s=40,
+                label="Detected breaths",
+                color="red", marker="x")
+
+    plt.title("Breathing signal with detected peaks")
+    plt.xlabel("Time (s)")
+    plt.legend()
+
+    plt.show()
+
+
+if __name__ == "__main__":
+    df = load_any()
+    print("Data loaded. Columns:", df.columns)
+
+    fs = calculate_freq(df)
+    print(f"Estimated sampling frequency: {fs:.2f} Hz")
+    plot_breath(df, fs)
+    # print(df.columns)
