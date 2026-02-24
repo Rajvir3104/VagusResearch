@@ -17,7 +17,7 @@ import dash
 from dash import dcc, html
 import plotly.graph_objs as go
 
-# ----- Run analysis once -----
+#  Run analysis once 
 spikes = obtain_spikes()
 
 ecg_epochs = epochs_ecg()
@@ -30,7 +30,7 @@ t_ecg, rate_ecg, sem_ecg = psth_from_overlap(ecg_overlap, ecg_epochs, bin_width=
 t_breath, rate_breath, sem_breath = psth_from_overlap(breath_overlap, breath_epochs, bin_width=0.1)
 
 
-# ----- Dash App -----
+# Dash App
 app = dash.Dash(__name__)
 
 def psth_figure(t, rate, sem, title, xlabel):
