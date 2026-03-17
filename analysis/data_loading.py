@@ -3,7 +3,7 @@ import pandas as pd
 from scipy.signal import butter, filtfilt, find_peaks
 import matplotlib.pyplot as plt
 
-fname = "../../playing_around/DM 2 labchart SG baseline.txt"
+fname = "../../Vagus nerve/vagus pilot comment 47 slow breathing.txt"
 
 # ---------- Loaders ----------
 def load_data_old_4col(): 
@@ -16,13 +16,27 @@ def load_data_msna_5col():
     with open(fname, "r") as f:
         for line in f:
             parts = line.strip().split()
-            if len(parts) == 5:
+            if len(parts) >= 5:  # changed == to >=
+                try:
+                    [float(x) for x in parts[:5]]  # validate only first 5
+                    rows.append(parts[:5])           # take only first 5
+                except ValueError:
+                    pass
+    df = pd.DataFrame(rows, columns=["time", "resp", "ecg", "bp", "raw_arm"]).astype(float)
+    return df
+
+def load_data_msna_4col():  
+    rows = []
+    with open(fname, "r") as f:
+        for line in f:
+            parts = line.strip().split()
+            if len(parts) == 4:
                 try:
                     [float(x) for x in parts]
                     rows.append(parts)
                 except ValueError:
                     pass
-    df = pd.DataFrame(rows, columns=["time", "ecg", "bp", "resp", "raw_arm"]).astype(float)
+    df = pd.DataFrame(rows, columns=["time", "ecg", "raw_arm", "resp"]).astype(float)
     return df
 
 
@@ -42,12 +56,11 @@ def canonicalize(df: pd.DataFrame) -> pd.DataFrame:
         return out
 
     # msna format
-    if {"time", "ecg", "resp", "raw_arm"}.issubset(cols):
+    if {"time", "ecg", "raw_arm", "resp"}.issubset(cols):
         out = df.rename(columns={"raw_arm": "nerve"}).copy()
         return out
 
     raise ValueError(f"Unknown data format. Columns found: {sorted(df.columns)}")
-
 
 def load_any():
     """
@@ -56,10 +69,12 @@ def load_any():
     try:
         df = load_data_old_4col()
         df = canonicalize(df)
+        df = df.dropna().reset_index(drop=True)  # remove any NaN rows
         return df
     except Exception:
         df = load_data_msna_5col()
         df = canonicalize(df)
+        df = df.dropna().reset_index(drop=True)  # remove any NaN rows
         return df
 
 
@@ -81,9 +96,12 @@ def lowpass(x, fs, cutoff=40, order=3):
 #  Nerve preprocessing 
 def pre_process(df, fs, low_cut=300.0, high_cut=3000.0):
     nerve_raw = df["nerve"].to_numpy(float)
-    return bandpass(nerve_raw, fs, low_cut, high_cut, order=2)
-
+ 
+    nerve_filt = bandpass(nerve_raw, fs, low_cut, high_cut, order=2)
+    print(nerve_filt[:10])
+    return nerve_filt
 def compute_threshold(signal, k=4):
+    print(signal[:10])
     sigma_n = np.median(np.abs(signal)) / 0.6745
     return k * sigma_n
 
@@ -159,14 +177,21 @@ def plot_breath(df, fs):
     plt.xlabel("Time (s)")
     plt.legend()
 
+    plt.xlim(47, 100)
+
     plt.show()
 
 
 if __name__ == "__main__":
     df = load_any()
     print("Data loaded. Columns:", df.columns)
-
+    print(df.head())
+    nerve_filt = pre_process(df, fs=calculate_freq(df))
+    thr = compute_threshold(nerve_filt)
+    print(thr)
+    # print(nerve_filt[:10])
     fs = calculate_freq(df)
     print(f"Estimated sampling frequency: {fs:.2f} Hz")
-    plot_breath(df, fs)
+    # plot_breath(df, fs)
     # print(df.columns)
+

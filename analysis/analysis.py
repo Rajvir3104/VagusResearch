@@ -24,8 +24,11 @@ def epochs_breath():
 
 def obtain_spikes():
     nerve_filt = data_loading.pre_process(df, fs)
+    print(df.columns)
     thr = data_loading.compute_threshold(nerve_filt)
+    
     spike_times = data_loading.detect_spikes(thr, nerve_filt, fs, t=df["time"].values)
+
     return spike_times
 
 
@@ -73,52 +76,38 @@ def psth_from_overlap(overlap, epochs, bin_width=0.01):
     bin_centers = (bins[:-1] + bins[1:]) / 2
     return bin_centers, mean_rate, sem_rate
 
-def plot_breath(df):
-    plt.figure(figsize=(14,5))
-    plt.plot(df["time"], df["breath"])
-    plt.title("Full Breathing timeline (debug)")
-    plt.xlabel("Time (s)")
-    plt.show()
-
-
-
-
-    plt.figure(figsize=(14,5))
-
-    if "breath" in df.columns:
-        plt.plot(time, df["breath"], label="Breathing signal", alpha=0.8)
-
-
-    plt.scatter(breath_peaks, [0]*len(breath_peaks),
-                marker="|", s=300, label="Detected breath peaks")
-
-    plt.title("Full Breathing timeline (debug)")
-    plt.xlabel("Time (s)")
-    plt.legend()
-    plt.show()
-
-
-
 if __name__ == "__main__":
     spikes = obtain_spikes()
-    print("Spikes:", spikes)
+    ecg_epochs = epochs_ecg()
+    breath_epochs = epochs_breath()
 
-    e_ecg = epochs_ecg()
-    print("ECG Epochs:", e_ecg)
+    print(spikes[:10])
 
-    e_breath = epochs_breath()
-    print("Breath Epochs:", e_breath)
+    # ecg_overlap = combining_spike_and_epoch(spikes, ecg_epochs)
+    # breath_overlap = combining_spike_and_epoch(spikes, breath_epochs)
 
-    ov_ecg = combining_spike_and_epoch(spikes, e_ecg)
-    print("ECG Overlap:", ov_ecg)
+    # t_ecg, rate_ecg, sem_ecg = psth_from_overlap(ecg_overlap, ecg_epochs, bin_width=0.005)
+    # t_breath, rate_breath, sem_breath = psth_from_overlap(breath_overlap, breath_epochs, bin_width=0.1)
 
-    ov_breath = combining_spike_and_epoch(spikes, e_breath)
-    print("Breath Overlap:", ov_breath)
+    # plt.figure(figsize=(12,5))
+    # plt.subplot(1,2,1)
+    # plt.title("PSTH around ECG R-peaks")
+    # plt.plot(t_ecg, rate_ecg, label="Mean firing rate")
+    # plt.fill_between(t_ecg, rate_ecg - sem_ecg, rate_ecg + sem_ecg, color="blue", alpha=0.2, label="SEM")
+    # plt.axvline(0, color="red", linestyle="--", label="R-peak")
+    # plt.xlabel("Time (s)")
+    # plt.ylabel("Firing Rate (spikes/s)")
+    # plt.legend()
 
-    t_ecg, mean_ecg, sem_ecg = psth_from_overlap(ov_ecg, e_ecg, bin_width=0.005)
-    print("ECG PSTH:", t_ecg, mean_ecg, sem_ecg)
+    # plt.subplot(1,2,2)
+    # plt.title("PSTH around Breathing Peaks")
+    # plt.plot(t_breath, rate_breath, label="Mean firing rate")
+    # plt.fill_between(t_breath, rate_breath - sem_breath, rate_breath + sem_breath,
+    #                  color="green", alpha=0.2, label="SEM")
+    # plt.axvline(0, color="orange", linestyle="--", label="Breath peak")
+    # plt.xlabel("Time (s)")
+    # plt.ylabel("Firing Rate (spikes/s)")
+    # plt.legend()
 
-    t_breath, mean_breath, sem_breath = psth_from_overlap(ov_breath, e_breath, bin_width=0.1)
-    print("Breath PSTH:", t_breath, mean_breath, sem_breath)
-
-    plot_breath(df)
+    # plt.tight_layout()
+    # plt.show()
