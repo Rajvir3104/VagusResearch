@@ -3,7 +3,7 @@ import pandas as pd
 from scipy.signal import butter, filtfilt, find_peaks
 import matplotlib.pyplot as plt
 
-fname = "../../Vagus nerve/vagus pilot comment 47 slow breathing.txt"
+fname = "../data/MSNA Feb 19 bsl.txt"
 
 # ---------- Loaders ----------
 def load_data_old_4col(): 
@@ -100,7 +100,7 @@ def pre_process(df, fs, low_cut=300.0, high_cut=3000.0):
     nerve_filt = bandpass(nerve_raw, fs, low_cut, high_cut, order=2)
     print(nerve_filt[:10])
     return nerve_filt
-def compute_threshold(signal, k=4):
+def compute_threshold(signal, k=3):
     print(signal[:10])
     sigma_n = np.median(np.abs(signal)) / 0.6745
     return k * sigma_n
@@ -150,6 +150,46 @@ def detecting_rpeaks_breathing(fs, df):
     pk_idx, _ = find_peaks(resp, distance=int(min_breath_s*fs),
                            prominence=np.std(resp)*0.3)
     return t[pk_idx]
+
+def detect_breathing_peaks_and_troughs(fs, df):
+    t = df["time"].to_numpy(float)
+    resp_raw = df["resp"].to_numpy(float)
+
+    resp = lowpass(resp_raw, fs=fs, cutoff=2.0)
+    resp = resp - np.median(resp)
+
+    # Flip signal if needed so inhale is positive
+    if np.ptp(resp[:int(fs*10)]) and np.abs(np.min(resp)) > np.max(resp):
+        resp = -resp
+
+    min_breath_s = 0.6
+    prominence = np.std(resp) * 0.3
+    min_distance = int(min_breath_s * fs)
+
+    # Maxima: inhale peaks
+    peak_idx, peak_props = find_peaks(
+        resp,
+        distance=min_distance,
+        prominence=prominence
+    )
+
+    # Minima: exhale troughs
+    trough_idx, trough_props = find_peaks(
+        -resp,
+        distance=min_distance,
+        prominence=prominence
+    )
+
+    return {
+        "peak_idx": peak_idx,
+        "peak_times": t[peak_idx],
+        "peak_values": resp[peak_idx],
+        "trough_idx": trough_idx,
+        "trough_times": t[trough_idx],
+        "trough_values": resp[trough_idx],
+        "resp_filtered": resp,
+        "time": t
+    }
 
 def plot_breath(df, fs):
 
