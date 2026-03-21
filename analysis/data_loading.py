@@ -3,8 +3,7 @@ import pandas as pd
 from scipy.signal import butter, filtfilt, find_peaks
 import matplotlib.pyplot as plt
 
-fname = "../data/MSNA Feb 19 bsl.txt"
-
+fname = "../data_parq/vagus pilot comment 46 baseline.parquet"
 # ---------- Loaders ----------
 def load_data_old_4col(): 
     df = pd.read_csv(fname, sep=r"\s+", header=None)
@@ -77,6 +76,8 @@ def load_any():
         df = df.dropna().reset_index(drop=True)  # remove any NaN rows
         return df
 
+def load_parquet():
+    return pd.read_parquet(fname)
 
 def calculate_freq(df):
     dt = np.diff(df["time"].values)
@@ -100,6 +101,7 @@ def pre_process(df, fs, low_cut=300.0, high_cut=3000.0):
     nerve_filt = bandpass(nerve_raw, fs, low_cut, high_cut, order=2)
     print(nerve_filt[:10])
     return nerve_filt
+
 def compute_threshold(signal, k=3):
     print(signal[:10])
     sigma_n = np.median(np.abs(signal)) / 0.6745
@@ -222,16 +224,16 @@ def plot_breath(df, fs):
     plt.show()
 
 
-if __name__ == "__main__":
-    df = load_any()
-    print("Data loaded. Columns:", df.columns)
-    print(df.head())
-    nerve_filt = pre_process(df, fs=calculate_freq(df))
-    thr = compute_threshold(nerve_filt)
-    print(thr)
-    # print(nerve_filt[:10])
-    fs = calculate_freq(df)
-    print(f"Estimated sampling frequency: {fs:.2f} Hz")
-    # plot_breath(df, fs)
-    # print(df.columns)
+# if __name__ == "__main__":
+#     df = load_parquet()
+#     print("Data loaded. Columns:", df.columns)
+#     print(df.head())
+#     nerve_filt = pre_process(df, fs=calculate_freq(df))
+#     thr = compute_threshold(nerve_filt)
+#     print(thr)
+#     # print(nerve_filt[:10])
+#     fs = calculate_freq(df)
+#     print(f"Estimated sampling frequency: {fs:.2f} Hz")
+#     # plot_breath(df, fs)
+#     # print(df.columns)
 
