@@ -8,7 +8,7 @@ du.configure_upload(app, "/tmp/uploads")
 
 # Import after du.configure_upload
 from dashboard import upload_callbacks  # noqa: F401
-import dashboard.pages.home  # noqa: F401
+# import dashboard.pages.home  # noqa: F401
 
 app.layout = html.Div([
     html.H1("Vagus PSTH Analysis"),
