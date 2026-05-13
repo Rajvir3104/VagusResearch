@@ -57,23 +57,6 @@ def process_uploaded_file(contents, filename):
             decoded_text = f.read()
 
         df = load_any(decoded_text)
-        print("=== DATAFRAME INFO ===", flush=True)
-        print(df, flush=True)
-
-        print("=== SHAPE ===", flush=True)
-        print(df.shape, flush=True)
-
-        print("=== COLUMNS ===", flush=True)
-        print(df.columns.tolist(), flush=True)
-
-        print("=== DTYPES ===", flush=True)
-        print(df.dtypes, flush=True)
-
-        print("=== HEAD ===", flush=True)
-        print(df.head(), flush=True)
-
-        print("=== TAIL ===", flush=True)
-        print(df.tail(), flush=True)
         results = run_dashboard_analysis(df)
 
         ecg_fig = psth_figure(
