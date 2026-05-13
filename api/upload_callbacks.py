@@ -9,6 +9,7 @@ from dash import Output, no_update
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from analysis.app_loaders import load_any
+from analysis.data_loading import load_parquet
 from api.data import run_dashboard_analysis
 from api.figures import psth_figure
 
@@ -46,14 +47,8 @@ def process_uploaded_file(file_paths):
         with open(file_path, "r", encoding="utf-8", errors="replace") as f:
             decoded_text = f.read()
 
-        df = load_any(decoded_text)
+        df = load_parquet(decoded_text)
 
-        print("=== SHAPE ===", flush=True)
-        print(df.shape, flush=True)
-        print("=== COLUMNS ===", flush=True)
-        print(df.columns.tolist(), flush=True)
-        print("=== HEAD ===", flush=True)
-        print(df.head(), flush=True)
 
         if df.empty:
             return (

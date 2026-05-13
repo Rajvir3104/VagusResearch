@@ -18,7 +18,7 @@ layout = html.Div([
         id="upload-data",
         text="Drag and Drop or Select File",
         max_files=1,
-        filetypes=["csv", "txt"],
+        filetypes=["csv", "txt", "parquet"],
         upload_id="vagus_upload",
     ),
 
