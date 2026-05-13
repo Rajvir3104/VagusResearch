@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 from dash import Input, Output, State, callback, no_update
 
 from analysis.app_loaders import load_any
+from analysis.data_loading import load_parquet
 from api.data import run_dashboard_analysis
 from api.figures import psth_figure
 
@@ -56,7 +57,7 @@ def process_uploaded_file(contents, filename):
         with open(temp_path, "r", encoding="utf-8", errors="replace") as f:
             decoded_text = f.read()
 
-        df = load_any(decoded_text)
+        df = load_parquet(decoded_text)
         results = run_dashboard_analysis(df)
 
         ecg_fig = psth_figure(

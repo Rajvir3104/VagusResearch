@@ -13,7 +13,7 @@ layout = html.Div([
             "Drag and Drop or ",
             html.A("Select CSV File")
         ]),
-        accept=".csv,.txt",
+        accept=".csv,.txt,.parquet",
         multiple=False,
         style={
             "width": "100%",
