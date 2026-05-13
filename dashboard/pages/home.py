@@ -4,27 +4,22 @@ import plotly.graph_objects as go
 
 dash.register_page(__name__, path="/")
 
+import dash
+import dash_uploader as du
+from dash import html, dcc
+import plotly.graph_objects as go
+
+dash.register_page(__name__, path="/")
+
 layout = html.Div([
     html.H2("CSV upload"),
 
-    dcc.Upload(
+    du.Upload(
         id="upload-data",
-        children=html.Div([
-            "Drag and Drop or ",
-            html.A("Select CSV File")
-        ]),
-        accept=".csv,.txt",
-        multiple=False,
-        style={
-            "width": "100%",
-            "height": "60px",
-            "lineHeight": "60px",
-            "borderWidth": "1px",
-            "borderStyle": "dashed",
-            "borderRadius": "5px",
-            "textAlign": "center",
-            "margin": "10px",
-        },
+        text="Drag and Drop or Select File",
+        max_files=1,
+        filetypes=["csv", "txt"],
+        upload_id="vagus_upload",
     ),
 
     html.Div(id="upload-status"),

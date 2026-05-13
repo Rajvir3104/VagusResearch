@@ -1,37 +1,38 @@
-import base64
 import os
-import tempfile
 import sys
 from pathlib import Path
-import numpy as np
 
-# allow imports from analysis/
-sys.path.append(str(Path(__file__).resolve().parents[1]))
-
+import dash_uploader as du
 import plotly.graph_objects as go
-from dash import Input, Output, State, callback, no_update
+from dash import Output, no_update
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from analysis.app_loaders import load_any
 from dashboard.data import run_dashboard_analysis
 from dashboard.figures import psth_figure
 
 
-@callback(
-    Output("upload-status", "children"),
-    Output("ecg-psth-graph", "figure"),
-    Output("breath-peak-psth-graph", "figure"),
-    Output("breath-trough-psth-graph", "figure"),
-    Input("upload-data", "contents"),
-    State("upload-data", "filename"),
+@du.callback(
+    output=[
+        Output("upload-status", "children"),
+        Output("ecg-psth-graph", "figure"),
+        Output("breath-peak-psth-graph", "figure"),
+        Output("breath-trough-psth-graph", "figure"),
+    ],
+    id="upload-data",
 )
-def process_uploaded_file(contents, filename):
-    if contents is None:
+def process_uploaded_file(file_paths):
+    if not file_paths:
         return (
             "No file uploaded yet.",
             go.Figure(),
             go.Figure(),
             go.Figure(),
         )
+
+    file_path = file_paths[0]
+    filename = os.path.basename(file_path)
 
     if not filename.lower().endswith((".csv", ".txt")):
         return (
@@ -41,39 +42,27 @@ def process_uploaded_file(contents, filename):
             no_update,
         )
 
-    temp_path = None
-
     try:
-        _, content_string = contents.split(",")
-        decoded = base64.b64decode(content_string)
-
-        suffix = os.path.splitext(filename)[1]
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
-            temp_file.write(decoded)
-            temp_path = temp_file.name
-
-        with open(temp_path, "r", encoding="utf-8", errors="replace") as f:
+        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
             decoded_text = f.read()
 
         df = load_any(decoded_text)
-        print("=== DATAFRAME INFO ===", flush=True)
-        print(df, flush=True)
 
         print("=== SHAPE ===", flush=True)
         print(df.shape, flush=True)
-
         print("=== COLUMNS ===", flush=True)
         print(df.columns.tolist(), flush=True)
-
-        print("=== DTYPES ===", flush=True)
-        print(df.dtypes, flush=True)
-
         print("=== HEAD ===", flush=True)
         print(df.head(), flush=True)
 
-        print("=== TAIL ===", flush=True)
-        print(df.tail(), flush=True)
+        if df.empty:
+            return (
+                "File loaded, but no rows were parsed.",
+                no_update,
+                no_update,
+                no_update,
+            )
+
         results = run_dashboard_analysis(df)
 
         ecg_fig = psth_figure(
@@ -123,5 +112,5 @@ def process_uploaded_file(contents, filename):
         )
 
     finally:
-        if temp_path and os.path.exists(temp_path):
-            os.remove(temp_path)
+        if os.path.exists(file_path):
+            os.remove(file_path)
