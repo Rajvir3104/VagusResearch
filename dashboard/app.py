@@ -1,10 +1,10 @@
 import dash
 from dash import html, dcc, page_container, callback
-import upload_callbacks 
+from dashboard import upload_callbacks
 app = dash.Dash(__name__, use_pages=True, suppress_callback_exceptions=True)
 
 # Import page modules so Dash page registration happens.
-import pages.home  # noqa: F401
+# import pages.home  # noqa: F401
 
 app.layout = html.Div([
     html.H1("Vagus PSTH Analysis"),
@@ -19,5 +19,9 @@ app.layout = html.Div([
     page_container,
 ])
 
+
+
+server = app.server
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
