@@ -1,83 +1,84 @@
+import io
 import numpy as np
 import pandas as pd
 from scipy.signal import butter, filtfilt, find_peaks
 import matplotlib.pyplot as plt
 
-fname = "../data_parq/vagus pilot comment 46 baseline.parquet"
-# ---------- Loaders ----------
-def load_data_old_4col(): 
-    df = pd.read_csv(fname, sep=r"\s+", header=None)
-    df.columns = ["time", "breath", "ecg", "vagus"]
-    return df
+# fname = "../data_parq/vagus pilot comment 22 slow breathing.parquet"
+# # ---------- Loaders ----------
+# def load_data_old_4col(): 
+#     df = pd.read_csv(fname, sep=r"\s+", header=None)
+#     df.columns = ["time", "ecg","bp", "vagus", "resp"]
+#     return df
 
-def load_data_msna_5col():  
-    rows = []
-    with open(fname, "r") as f:
-        for line in f:
-            parts = line.strip().split()
-            if len(parts) >= 5:  # changed == to >=
-                try:
-                    [float(x) for x in parts[:5]]  # validate only first 5
-                    rows.append(parts[:5])           # take only first 5
-                except ValueError:
-                    pass
-    df = pd.DataFrame(rows, columns=["time", "resp", "ecg", "bp", "raw_arm"]).astype(float)
-    return df
+# def load_data_msna_5col():  
+#     rows = []
+#     with open(fname, "r") as f:
+#         for line in f:
+#             parts = line.strip().split()
+#             if len(parts) >= 5:  # changed == to >=
+#                 try:
+#                     [float(x) for x in parts[:5]]  # validate only first 5
+#                     rows.append(parts[:5])           # take only first 5
+#                 except ValueError:
+#                     pass
+#     df = pd.DataFrame(rows, columns=["time", "resp", "ecg", "bp", "raw_arm"]).astype(float)
+#     return df
 
-def load_data_msna_4col():  
-    rows = []
-    with open(fname, "r") as f:
-        for line in f:
-            parts = line.strip().split()
-            if len(parts) == 4:
-                try:
-                    [float(x) for x in parts]
-                    rows.append(parts)
-                except ValueError:
-                    pass
-    df = pd.DataFrame(rows, columns=["time", "ecg", "raw_arm", "resp"]).astype(float)
-    return df
+# def load_data_msna_4col():  
+#     rows = []
+#     with open(fname, "r") as f:
+#         for line in f:
+#             parts = line.strip().split()
+#             if len(parts) == 4:
+#                 try:
+#                     [float(x) for x in parts]
+#                     rows.append(parts)
+#                 except ValueError:
+#                     pass
+#     df = pd.DataFrame(rows, columns=["time", "ecg", "raw_arm", "resp"]).astype(float)
+#     return df
 
 
-def canonicalize(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Returns a NEW df with consistent column names:
-      time, ecg, resp, nerve, (optional) bp
-    Works with both:
-      old: time breath ecg vagus
-      msna: time ecg bp resp raw_arm
-    """
-    cols = set(df.columns)
+# def canonicalize(df: pd.DataFrame) -> pd.DataFrame:
+#     """
+#     Returns a NEW df with consistent column names:
+#       time, ecg, resp, nerve, (optional) bp
+#     Works with both:
+#       old: time breath ecg vagus
+#       msna: time ecg bp resp raw_arm
+#     """
+#     cols = set(df.columns)
 
-    # vagus format
-    if {"time", "breath", "ecg", "vagus"}.issubset(cols):
-        out = df.rename(columns={"breath": "resp", "vagus": "nerve"}).copy()
-        return out
+#     # vagus format
+#     if {"time", "breath", "ecg", "vagus"}.issubset(cols):
+#         out = df.rename(columns={"breath": "resp", "vagus": "nerve"}).copy()
+#         return out
 
-    # msna format
-    if {"time", "ecg", "raw_arm", "resp"}.issubset(cols):
-        out = df.rename(columns={"raw_arm": "nerve"}).copy()
-        return out
+#     # msna format
+#     if {"time", "ecg", "raw_arm", "resp"}.issubset(cols):
+#         out = df.rename(columns={"raw_arm": "nerve"}).copy()
+#         return out
 
-    raise ValueError(f"Unknown data format. Columns found: {sorted(df.columns)}")
+#     raise ValueError(f"Unknown data format. Columns found: {sorted(df.columns)}")
 
-def load_any():
-    """
-    Tries old format first (fast). If it fails, falls back to MSNA-style loader.
-    """
-    try:
-        df = load_data_old_4col()
-        df = canonicalize(df)
-        df = df.dropna().reset_index(drop=True)  # remove any NaN rows
-        return df
-    except Exception:
-        df = load_data_msna_5col()
-        df = canonicalize(df)
-        df = df.dropna().reset_index(drop=True)  # remove any NaN rows
-        return df
+# def load_any():
+#     """
+#     Tries old format first (fast). If it fails, falls back to MSNA-style loader.
+#     """
+#     try:
+#         df = load_data_old_4col()
+#         df = canonicalize(df)
+#         df = df.dropna().reset_index(drop=True)  # remove any NaN rows
+#         return df
+#     except Exception:
+#         df = load_data_msna_5col()
+#         df = canonicalize(df)
+#         df = df.dropna().reset_index(drop=True)  # remove any NaN rows
+#         return df
 
-def load_parquet():
-    return pd.read_parquet(fname)
+# def load_parquet():
+#     return pd.read_parquet(fname)
 
 def calculate_freq(df):
     dt = np.diff(df["time"].values)
@@ -99,11 +100,11 @@ def pre_process(df, fs, low_cut=300.0, high_cut=3000.0):
     nerve_raw = df["nerve"].to_numpy(float)
  
     nerve_filt = bandpass(nerve_raw, fs, low_cut, high_cut, order=2)
-    print(nerve_filt[:10])
+    # print(nerve_filt[:10])
     return nerve_filt
 
-def compute_threshold(signal, k=3):
-    print(signal[:10])
+def compute_threshold(signal, k=2.5):
+    # print(signal[:10])
     sigma_n = np.median(np.abs(signal)) / 0.6745
     return k * sigma_n
 

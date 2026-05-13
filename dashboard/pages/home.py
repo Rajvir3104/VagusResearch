@@ -1,52 +1,40 @@
 import dash
 from dash import html, dcc
-
-from data import (
-    t_ecg,
-    rate_ecg,
-    sem_ecg,
-    t_breath_peak,
-    rate_breath_peak,
-    sem_breath_peak,
-    t_breath_trough,
-    rate_breath_trough,
-    sem_breath_trough,
-)
-from figures import psth_figure
+import plotly.graph_objects as go
 
 dash.register_page(__name__, path="/")
 
 layout = html.Div([
-    html.H2("ECG-Aligned PSTH"),
-    dcc.Graph(
-        figure=psth_figure(
-            t_ecg,
-            rate_ecg,
-            sem_ecg,
-            title="ECG-aligned PSTH",
-            xlabel="Time relative to R-peak (s)",
-        )
+    html.H2("CSV upload"),
+
+    dcc.Upload(
+        id="upload-data",
+        children=html.Div([
+            "Drag and Drop or ",
+            html.A("Select CSV File")
+        ]),
+        accept=".csv,.txt",
+        multiple=False,
+        style={
+            "width": "100%",
+            "height": "60px",
+            "lineHeight": "60px",
+            "borderWidth": "1px",
+            "borderStyle": "dashed",
+            "borderRadius": "5px",
+            "textAlign": "center",
+            "margin": "10px",
+        },
     ),
+
+    html.Div(id="upload-status"),
+
+    html.H2("Specific Window: ECG + Firing Rate"),
+    dcc.Graph(id="ecg-psth-graph", figure=go.Figure()),
 
     html.H2("Respiration-Aligned Peaks PSTH"),
-    dcc.Graph(
-        figure=psth_figure(
-            t_breath_peak,
-            rate_breath_peak,
-            sem_breath_peak,
-            title="Respiration-aligned PSTH",
-            xlabel="Time relative to respiration peak (s)",
-        )
-    ),
+    dcc.Graph(id="breath-peak-psth-graph", figure=go.Figure()),
 
     html.H2("Respiration-Aligned Troughs PSTH"),
-    dcc.Graph(
-        figure=psth_figure(
-            t_breath_trough,
-            rate_breath_trough,
-            sem_breath_trough,
-            title="Respiration-aligned PSTH",
-            xlabel="Time relative to respiration trough (s)",
-        )
-    ),
+    dcc.Graph(id="breath-trough-psth-graph", figure=go.Figure()),
 ])
