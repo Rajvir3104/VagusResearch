@@ -9,8 +9,8 @@ from dash import Output, no_update
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from analysis.app_loaders import load_any
-from dashboard.data import run_dashboard_analysis
-from dashboard.figures import psth_figure
+from api.data import run_dashboard_analysis
+from api.figures import psth_figure
 
 
 @du.callback(
